@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">PobieraczkaInformacji</string>
+
+    <string name="mock_news_title">Gov Parson pushes to prosecute reporter who found security flaw in state site</string>
+    <string name="mock_author_name">John Doe</string>
+    <string name="mock_article_date">2021/10/01</string>
+    <string name="mock_article_url">https://www.google.com/</string>
 </resources>
