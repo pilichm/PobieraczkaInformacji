@@ -1,11 +1,16 @@
 package pl.pilichm.pobieraczkainformacji
 
+import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkInfo
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_main.*
+import org.jsoup.Jsoup
+import pl.pilichm.pobieraczkainformacji.db.ArticleDataBaseHelper
 import pl.pilichm.pobieraczkainformacji.networking.ArticleItem
 import pl.pilichm.pobieraczkainformacji.networking.HackerNewsService
 import pl.pilichm.pobieraczkainformacji.recyclerview.Article
@@ -18,16 +23,39 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
 
+
 class MainActivity : AppCompatActivity() {
     private var mArticles: ArrayList<Article>? = ArrayList()
     private var mAdapter: ArticleRecyclerView? = null
+    private var mDbHelper: ArticleDataBaseHelper? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        mDbHelper = ArticleDataBaseHelper(applicationContext)
         displayListOfArticles()
-        downloadNewestArticles()
+
+        if (internetEnabled()) {
+            Log.i("MAIN-ACT", "Displaying downloaded articles.")
+            downloadNewestArticles()
+            notifyAdapterDataChanged()
+        } else {
+            Log.i("MAIN-ACT", "Displaying articles saved in db.")
+            val savedArticles = mDbHelper!!.readAllArticles()
+            mArticles!!.clear()
+            mArticles!!.addAll(savedArticles)
+            notifyAdapterDataChanged()
+        }
+    }
+
+    /**
+     * Function for checking if internet connection is enabled.
+     * */
+    private fun internetEnabled(): Boolean {
+        val cm = applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val activeNetwork: NetworkInfo? = cm.activeNetworkInfo
+        return activeNetwork?.isConnectedOrConnecting == true
     }
 
     /**
@@ -80,22 +108,23 @@ class MainActivity : AppCompatActivity() {
      * Display list of newest articles.
      * */
     private fun displayListOfArticles(){
-        val article = Article(
-            resources.getString(R.string.mock_news_title),
-            resources.getString(R.string.mock_author_name),
-            1977,
-            resources.getString(R.string.mock_article_url)
-        )
-
-        mArticles!!.add(article)
-        mArticles!!.add(article)
-        mArticles!!.add(article)
+//        val article = Article(
+//            resources.getString(R.string.mock_news_title),
+//            resources.getString(R.string.mock_author_name),
+//            1977,
+//            resources.getString(R.string.mock_article_url)
+//        )
+//
+//        mArticles!!.add(article)
+//        mArticles!!.add(article)
+//        mArticles!!.add(article)
 
         mAdapter = ArticleRecyclerView(mArticles!!)
         mAdapter!!.addOnClickListener(object: ArticleRecyclerView.OnClickListener {
             override fun onClick(position: Int, item: Article) {
                 val intent = Intent(applicationContext, ArticleActivity::class.java)
                 intent.putExtra(Constants.EXTRA_ARTICLE_URL, item.articleUrl)
+                intent.putExtra(Constants.EXTRA_ARTICLE_BODY, item.articleBody)
                 startActivity(intent)
             }
         })
@@ -112,6 +141,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Downloads new article info and web page body, displays it in activity and saves in sqlite db.
+     * */
     private fun downloadArticleInfo(articleId: Int, service: HackerNewsService){
         service.getArticleData(articleId)
             .enqueue(object: Callback<ArticleItem>{
@@ -123,13 +155,13 @@ class MainActivity : AppCompatActivity() {
                         Log.i("GET_ARTICLE_DATA", "Get article data ok response!")
                         val article = response.body()
 
-                        mArticles!!.add(Article(
+                        val articleObj = Article(
                             article?.title ?: resources.getString(R.string.mock_news_title),
                             article?.author ?: resources.getString(R.string.mock_author_name),
                             article?.time ?: 0,
                             article?.url ?: resources.getString(R.string.mock_article_url)
-                        ))
-
+                        )
+                        mArticles!!.add(articleObj)
                         notifyAdapterDataChanged()
 
                         Log.i("GET_ARTICLE_DATA", article.toString() ?: "EMPTY")
@@ -142,6 +174,23 @@ class MainActivity : AppCompatActivity() {
                     Log.e("GET_ARTICLE_DATA", "Get article data error: ${t.printStackTrace()}}")
                 }
             })
+    }
+
+    /**
+     * Save downloaded articles on app exit.
+     * */
+    override fun onPause() {
+        super.onPause()
+        Thread {
+            if (!mArticles.isNullOrEmpty()&&mDbHelper!=null) {
+                for (article in mArticles!!){
+                    val doc = Jsoup.connect(article.articleUrl).get()
+                    val articleHtmlBody = doc.outerHtml()
+                    mDbHelper!!.saveArticle(article, articleHtmlBody)
+                    Log.i("MAIN", "Article saved!")
+                }
+            }
+        }.start()
     }
 
     private fun getMaxItemId(){
