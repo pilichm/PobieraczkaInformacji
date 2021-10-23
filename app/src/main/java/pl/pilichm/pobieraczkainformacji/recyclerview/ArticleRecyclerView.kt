@@ -6,6 +6,9 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import pl.pilichm.pobieraczkainformacji.R
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
 
 class ArticleRecyclerView(private val articles: ArrayList<Article>)
     : RecyclerView.Adapter<ArticleRecyclerView.ViewHolder>() {
@@ -27,10 +30,13 @@ class ArticleRecyclerView(private val articles: ArrayList<Article>)
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val article = articles[position]
+        val sdf = SimpleDateFormat("yyyy-MM-dd")
+        val netDate = Date((article.creationDate * 1000).toLong())
+        val date = sdf.format(netDate)
 
         holder.tvArticleTitle.text = article.articleTitle
-        holder.tvAuthor.text = article.authorName
-        holder.tvCreationTime.text = article.creationDate.toString()
+        holder.tvAuthor.text = "by: ${article.authorName}"
+        holder.tvCreationTime.text = date
 
         holder.itemView.setOnClickListener {
             if (onClickListener!=null){

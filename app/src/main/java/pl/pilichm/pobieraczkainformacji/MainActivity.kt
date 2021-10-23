@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Function downloading and displayin in main activity 10 latest news.
+     * Function downloading and displaying in main activity 10 latest news.
      * */
     private fun downloadNewestArticles(){
         val rBuilder = Retrofit.Builder()
@@ -58,39 +58,11 @@ class MainActivity : AppCompatActivity() {
                             .baseUrl(HackerNewsService.BASE_URL)
                             .build().create(HackerNewsService::class.java)
 
-                        for (articleId in 0..9){
-                            articleService.getArticleData(topArticles[articleId].toInt())
-                                .enqueue(object: Callback<ArticleItem>{
-                                override fun onResponse(
-                                    call: Call<ArticleItem>,
-                                    response: Response<ArticleItem>
-                                ) {
-                                    if (response.isSuccessful){
-                                        Log.i("GET_ARTICLE_DATA", "Get article data ok response!")
-                                        val article = response.body()
-
-                                        mArticles!!.add(Article(
-                                            article?.title ?: resources.getString(R.string.mock_news_title),
-                                            article?.author ?: resources.getString(R.string.mock_author_name),
-                                            article?.time ?: 0,
-                                            article?.url ?: resources.getString(R.string.mock_article_url)
-                                        ))
-
-                                        Log.i("GET_ARTICLE_DATA", article.toString() ?: "EMPTY")
-                                    } else {
-                                        Log.i("GET_ARTICLE_DATA", "Get article data nok response!")
-                                    }
-                                }
-
-                                override fun onFailure(call: Call<ArticleItem>, t: Throwable) {
-                                    Log.e("GET_ARTICLE_DATA", "Get article data error: ${t.printStackTrace()}}")
-                                }
-                            })
+                        for (articleId in 0..4) {
+                            downloadArticleInfo(topArticles[articleId].toInt(), articleService)
                         }
 
-                        if (mAdapter!=null){
-                            mAdapter!!.notifyDataSetChanged()
-                        }
+                        notifyAdapterDataChanged()
                     }
 
                 } else {
@@ -129,6 +101,47 @@ class MainActivity : AppCompatActivity() {
         })
         rvArticles.adapter = mAdapter
         rvArticles.layoutManager = LinearLayoutManager(this)
+    }
+
+    /**
+     * Notify adapter that new article info was added.
+     * */
+    private fun notifyAdapterDataChanged(){
+        if (mAdapter!=null){
+            mAdapter!!.notifyDataSetChanged()
+        }
+    }
+
+    private fun downloadArticleInfo(articleId: Int, service: HackerNewsService){
+        service.getArticleData(articleId)
+            .enqueue(object: Callback<ArticleItem>{
+                override fun onResponse(
+                    call: Call<ArticleItem>,
+                    response: Response<ArticleItem>
+                ) {
+                    if (response.isSuccessful){
+                        Log.i("GET_ARTICLE_DATA", "Get article data ok response!")
+                        val article = response.body()
+
+                        mArticles!!.add(Article(
+                            article?.title ?: resources.getString(R.string.mock_news_title),
+                            article?.author ?: resources.getString(R.string.mock_author_name),
+                            article?.time ?: 0,
+                            article?.url ?: resources.getString(R.string.mock_article_url)
+                        ))
+
+                        notifyAdapterDataChanged()
+
+                        Log.i("GET_ARTICLE_DATA", article.toString() ?: "EMPTY")
+                    } else {
+                        Log.i("GET_ARTICLE_DATA", "Get article data nok response!")
+                    }
+                }
+
+                override fun onFailure(call: Call<ArticleItem>, t: Throwable) {
+                    Log.e("GET_ARTICLE_DATA", "Get article data error: ${t.printStackTrace()}}")
+                }
+            })
     }
 
     private fun getMaxItemId(){
