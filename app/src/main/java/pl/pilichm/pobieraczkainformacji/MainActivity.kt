@@ -6,6 +6,9 @@ import android.net.ConnectivityManager
 import android.net.NetworkInfo
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_main.*
@@ -33,6 +36,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        hideArticlesList()
+
         mDbHelper = ArticleDataBaseHelper(applicationContext)
         displayListOfArticles()
 
@@ -46,6 +51,7 @@ class MainActivity : AppCompatActivity() {
             mArticles!!.clear()
             mArticles!!.addAll(savedArticles)
             notifyAdapterDataChanged()
+            showArticlesList()
         }
     }
 
@@ -62,6 +68,7 @@ class MainActivity : AppCompatActivity() {
      * Function downloading and displaying in main activity 10 latest news.
      * */
     private fun downloadNewestArticles(){
+        hideArticlesList()
         val rBuilder = Retrofit.Builder()
         val service = rBuilder
             .addConverterFactory(ScalarsConverterFactory.create())
@@ -86,9 +93,7 @@ class MainActivity : AppCompatActivity() {
                             .baseUrl(HackerNewsService.BASE_URL)
                             .build().create(HackerNewsService::class.java)
 
-                        for (articleId in 0..4) {
-                            downloadArticleInfo(topArticles[articleId].toInt(), articleService)
-                        }
+                        downloadArticleInfo(topArticles, 5, articleService)
 
                         notifyAdapterDataChanged()
                     }
@@ -108,17 +113,6 @@ class MainActivity : AppCompatActivity() {
      * Display list of newest articles.
      * */
     private fun displayListOfArticles(){
-//        val article = Article(
-//            resources.getString(R.string.mock_news_title),
-//            resources.getString(R.string.mock_author_name),
-//            1977,
-//            resources.getString(R.string.mock_article_url)
-//        )
-//
-//        mArticles!!.add(article)
-//        mArticles!!.add(article)
-//        mArticles!!.add(article)
-
         mAdapter = ArticleRecyclerView(mArticles!!)
         mAdapter!!.addOnClickListener(object: ArticleRecyclerView.OnClickListener {
             override fun onClick(position: Int, item: Article) {
@@ -144,36 +138,41 @@ class MainActivity : AppCompatActivity() {
     /**
      * Downloads new article info and web page body, displays it in activity and saves in sqlite db.
      * */
-    private fun downloadArticleInfo(articleId: Int, service: HackerNewsService){
-        service.getArticleData(articleId)
-            .enqueue(object: Callback<ArticleItem>{
-                override fun onResponse(
-                    call: Call<ArticleItem>,
-                    response: Response<ArticleItem>
-                ) {
-                    if (response.isSuccessful){
-                        Log.i("GET_ARTICLE_DATA", "Get article data ok response!")
-                        val article = response.body()
+    private fun downloadArticleInfo(articles: List<String>, articleId: Int, service: HackerNewsService){
+        if (articleId>=0){
+            service.getArticleData(articles[articleId].toInt())
+                .enqueue(object: Callback<ArticleItem>{
+                    override fun onResponse(
+                        call: Call<ArticleItem>,
+                        response: Response<ArticleItem>
+                    ) {
+                        if (response.isSuccessful){
+                            Log.i("GET_ARTICLE_DATA", "Get article data ok response!")
+                            val article = response.body()
 
-                        val articleObj = Article(
-                            article?.title ?: resources.getString(R.string.mock_news_title),
-                            article?.author ?: resources.getString(R.string.mock_author_name),
-                            article?.time ?: 0,
-                            article?.url ?: resources.getString(R.string.mock_article_url)
-                        )
-                        mArticles!!.add(articleObj)
-                        notifyAdapterDataChanged()
+                            val articleObj = Article(
+                                article?.title ?: resources.getString(R.string.mock_news_title),
+                                article?.author ?: resources.getString(R.string.mock_author_name),
+                                article?.time ?: 0,
+                                article?.url ?: resources.getString(R.string.mock_article_url)
+                            )
+                            mArticles!!.add(articleObj)
+                            notifyAdapterDataChanged()
 
-                        Log.i("GET_ARTICLE_DATA", article.toString() ?: "EMPTY")
-                    } else {
-                        Log.i("GET_ARTICLE_DATA", "Get article data nok response!")
+                            Log.i("GET_ARTICLE_DATA", article.toString() ?: "EMPTY")
+                            downloadArticleInfo(articles, articleId-1, service)
+                        } else {
+                            Log.i("GET_ARTICLE_DATA", "Get article data nok response!")
+                        }
                     }
-                }
 
-                override fun onFailure(call: Call<ArticleItem>, t: Throwable) {
-                    Log.e("GET_ARTICLE_DATA", "Get article data error: ${t.printStackTrace()}}")
-                }
-            })
+                    override fun onFailure(call: Call<ArticleItem>, t: Throwable) {
+                        Log.e("GET_ARTICLE_DATA", "Get article data error: ${t.printStackTrace()}}")
+                    }
+                })
+        } else {
+            showArticlesList()
+        }
     }
 
     /**
@@ -191,6 +190,42 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }.start()
+    }
+
+    /**
+     * Shows recycler view with articles and hides progress bar.
+     * */
+    private fun showArticlesList(){
+        rvArticles.visibility = View.VISIBLE
+        progressBarMain.visibility = View.INVISIBLE
+    }
+
+    /**
+     * Hides recycler view with articles and shows progress bar.
+     * */
+    private fun hideArticlesList(){
+        rvArticles.visibility = View.INVISIBLE
+        progressBarMain.visibility = View.VISIBLE
+    }
+
+    /**
+     * Create menu with icon for refreshing articles info.
+     * */
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId){
+            R.id.main_menu_refresh -> {
+                downloadNewestArticles()
+                true
+            }
+            else -> {
+                super.onOptionsItemSelected(item)
+            }
+        }
     }
 
     private fun getMaxItemId(){

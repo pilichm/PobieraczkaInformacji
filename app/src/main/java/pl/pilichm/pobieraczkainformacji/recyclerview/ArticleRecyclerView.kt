@@ -1,5 +1,6 @@
 package pl.pilichm.pobieraczkainformacji.recyclerview
 
+import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -35,6 +36,7 @@ class ArticleRecyclerView(private val articles: ArrayList<Article>)
         val date = sdf.format(netDate)
 
         holder.tvArticleTitle.text = article.articleTitle
+        holder.tvArticleTitle.typeface = Typeface.DEFAULT_BOLD
         holder.tvAuthor.text = "by: ${article.authorName}"
         holder.tvCreationTime.text = date
 

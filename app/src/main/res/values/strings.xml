@@ -5,4 +5,5 @@
     <string name="mock_author_name">John Doe</string>
     <string name="mock_article_date">2021/10/01</string>
     <string name="mock_article_url">https://www.google.com/</string>
+    <string name="main_menu_refresh_title">Refresh</string>
 </resources>

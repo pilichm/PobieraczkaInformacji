@@ -24,10 +24,8 @@ class ArticleActivity : AppCompatActivity() {
             if (articleUrl != null && internetEnabled()) {
                 webview.loadUrl(articleUrl)
             } else {
-                Log.e("ALLDATA", articleBody!!)
                 try {
-                    webview.settings.javaScriptEnabled = true
-                    webview.loadData(articleBody, "text/html; charset=utf-8", "UTF-8")
+                    webview.loadData(articleBody!!, "text/html; charset=utf-8", "UTF-8")
                 } catch (e: Exception){
                     Log.e("WBERR", "${e.printStackTrace()}")
                 }
