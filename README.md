@@ -7,6 +7,10 @@ Used technologies:
 - recycler view,
 - checking for internet connection.
 
-App view during work:
-<br>
+<h3>App screenshot:</h3>
+
 <img src="PobieraczkaInformacjiMainScreen" width="200" height="400">
+
+<h3>App during usage:</h3>
+
+<img src="PobieraczkaInformacjiUsage.gif" width="200" height="400">
