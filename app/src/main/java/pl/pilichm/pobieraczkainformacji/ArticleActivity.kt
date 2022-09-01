@@ -6,14 +6,17 @@ import android.net.NetworkInfo
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import kotlinx.android.synthetic.main.activity_article.*
+import pl.pilichm.pobieraczkainformacji.databinding.ActivityArticleBinding
 import pl.pilichm.pobieraczkainformacji.recyclerview.Constants
 import java.lang.Exception
 
 class ArticleActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityArticleBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_article)
+        binding = ActivityArticleBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         /**
          * Display article if url was passed.
@@ -22,10 +25,10 @@ class ArticleActivity : AppCompatActivity() {
             val articleUrl = intent.getStringExtra(Constants.EXTRA_ARTICLE_URL)
             val articleBody = intent.getStringExtra(Constants.EXTRA_ARTICLE_BODY)
             if (articleUrl != null && internetEnabled()) {
-                webview.loadUrl(articleUrl)
+                binding.webview.loadUrl(articleUrl)
             } else {
                 try {
-                    webview.loadData(articleBody!!, "text/html; charset=utf-8", "UTF-8")
+                    binding.webview.loadData(articleBody!!, "text/html; charset=utf-8", "UTF-8")
                 } catch (e: Exception){
                     Log.e("WBERR", "${e.printStackTrace()}")
                 }

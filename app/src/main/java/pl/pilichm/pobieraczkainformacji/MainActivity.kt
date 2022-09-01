@@ -11,8 +11,8 @@ import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import kotlinx.android.synthetic.main.activity_main.*
 import org.jsoup.Jsoup
+import pl.pilichm.pobieraczkainformacji.databinding.ActivityMainBinding
 import pl.pilichm.pobieraczkainformacji.db.ArticleDataBaseHelper
 import pl.pilichm.pobieraczkainformacji.networking.ArticleItem
 import pl.pilichm.pobieraczkainformacji.networking.HackerNewsService
@@ -28,13 +28,15 @@ import retrofit2.converter.scalars.ScalarsConverterFactory
 
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
     private var mArticles: ArrayList<Article>? = ArrayList()
     private var mAdapter: ArticleRecyclerView? = null
     private var mDbHelper: ArticleDataBaseHelper? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         hideArticlesList()
 
@@ -122,8 +124,8 @@ class MainActivity : AppCompatActivity() {
                 startActivity(intent)
             }
         })
-        rvArticles.adapter = mAdapter
-        rvArticles.layoutManager = LinearLayoutManager(this)
+        binding.rvArticles.adapter = mAdapter
+        binding.rvArticles.layoutManager = LinearLayoutManager(this)
     }
 
     /**
@@ -196,16 +198,16 @@ class MainActivity : AppCompatActivity() {
      * Shows recycler view with articles and hides progress bar.
      * */
     private fun showArticlesList(){
-        rvArticles.visibility = View.VISIBLE
-        progressBarMain.visibility = View.INVISIBLE
+        binding.rvArticles.visibility = View.VISIBLE
+        binding.progressBarMain.visibility = View.INVISIBLE
     }
 
     /**
      * Hides recycler view with articles and shows progress bar.
      * */
     private fun hideArticlesList(){
-        rvArticles.visibility = View.INVISIBLE
-        progressBarMain.visibility = View.VISIBLE
+        binding.rvArticles.visibility = View.INVISIBLE
+        binding.progressBarMain.visibility = View.VISIBLE
     }
 
     /**
